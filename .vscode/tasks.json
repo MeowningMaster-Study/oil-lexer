@@ -6,9 +6,9 @@
         {
             "label": "Build project",
             "type": "shell",
-            "command": "g++ src/main.cpp -o dist/main",
+            "command": "g++ -std=c++20 src/main.cpp -o dist/main",
             "windows": {
-                "command": "g++ src/main.cpp -o dist/main.exe",
+                "command": "g++ -std=c++20 src/main.cpp -o dist/main.exe",
             }
         }
     ]
