@@ -1,12 +1,18 @@
 #include <iostream>
 
+#include "file.hpp"
+
 int main(int argc, char const *argv[])
 {
-    if (argc != 1)
+    if (argc != 2)
     {
         throw std::runtime_error("Incorrect number of args");
     }
+    std::string file_path = argv[1];
 
-    std::string file_path = argv[0];
-    std::cout << file_path;
+    auto tokens = tokenize_file(file_path);
+    for (auto token : tokens)
+    {
+        std::cout << token << '\n';
+    }
 }

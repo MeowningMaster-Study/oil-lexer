@@ -1,11 +1,34 @@
-#include <iterator>
+#include <string>
+#include <vector>
+#include <optional>
+
+#include "token.hpp"
 
 class Tokenizer
 {
-    struct Iterator
+public:
+    int position = 0;
+    std::string text;
+
+    Tokenizer(std::string text) : text(text) {}
+
+    std::optional<Token> next()
     {
-        using iterator_category = std::input_iterator_tag;
-        using difference_type = int;
-        // using value_type = Token;
-    };
+        return std::nullopt;
+    }
+
+    Tokens consume()
+    {
+        Tokens tokens;
+        while (true)
+        {
+            auto x = this->next();
+            if (!x.has_value())
+            {
+                break;
+            }
+            tokens.push_back(x.value());
+        }
+        return tokens;
+    }
 };

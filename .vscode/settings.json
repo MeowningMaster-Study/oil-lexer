@@ -1,6 +1,7 @@
 {
+    "editor.formatOnSave": true,
+    "C_Cpp.default.cppStandard": "c++20",
     "[cpp]": {
-        "editor.formatOnSave": true,
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
     "files.associations": {
@@ -45,6 +46,12 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "streambuf": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "bit": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "string_view": "cpp",
+        "numbers": "cpp",
+        "optional": "cpp"
     }
 }

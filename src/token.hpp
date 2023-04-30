@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 
 enum TokenType
 {
@@ -6,11 +7,43 @@ enum TokenType
     KEYWORD,
     OPERATOR,
     LITERAL,
-    PUNCTUATION,
+    PUNCTUATION
+};
+
+class TokenTypeUtils
+{
+public:
+    static std::string toString(TokenType type)
+    {
+        switch (type)
+        {
+        case TokenType::IDENTIFIER:
+            return "Identifier";
+        case TokenType::KEYWORD:
+            return "Keyword";
+        case TokenType::OPERATOR:
+            return "Operator";
+        case TokenType::LITERAL:
+            return "Literal";
+        case TokenType::PUNCTUATION:
+            return "Punctuation";
+        default:
+            throw std::runtime_error("Unknown token type");
+        }
+    }
 };
 
 class Token
 {
+public:
     TokenType type;
     std::string value;
+
+    friend std::ostream &operator<<(std::ostream &stream, const Token &token)
+    {
+        auto tokenType = TokenTypeUtils::toString(token.type);
+        return stream << tokenType << "(\"" << token.value << "\")";
+    }
 };
+
+using Tokens = std::vector<Token>;
