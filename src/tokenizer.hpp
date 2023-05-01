@@ -7,6 +7,13 @@
 #include "token.hpp"
 #include "specs/utils.hpp"
 
+enum CommentState
+{
+    NONE,
+    SINGLE_LINE,
+    MULTILINE
+};
+
 class Tokenizer
 {
 private:
@@ -24,6 +31,21 @@ private:
 
     std::string buffer;
 
+    /**
+     * Is similar to identifier. May be:
+     * - identifier
+     * - keyword
+     * - wordly operator
+     */
+    bool is_identifiery = false;
+
+    /**
+     * Is similar to number literal (integer or float)
+     */
+    bool is_numbery = false;
+
+    CommentState commentState;
+
 public:
     Tokenizer(std::string text) : text(text) {}
 
@@ -32,9 +54,14 @@ public:
     std::optional<Token> next()
     {
         auto optional_char = this->next_char();
-        if (!optional_char.has_value() && buffer.length() == 0)
+        if (!optional_char.has_value())
         {
-            return std::nullopt;
+            if (buffer.length() == 0)
+            {
+                return std::nullopt;
+            }
+
+            // TODO: flush buffer
         }
         char character = optional_char.value();
 

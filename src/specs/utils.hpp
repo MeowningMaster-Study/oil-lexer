@@ -14,12 +14,12 @@ bool is_in_vector(std::vector<T> vector, T value)
 
 bool is_punctuation(char character)
 {
-    return is_in_vector(punctuations_vector, character);
+    return is_in_vector(punctuations, character);
 };
 
 bool is_whitespace(char character)
 {
-    return is_in_vector(whitespace_vector, character);
+    return is_in_vector(whitespaces, character);
 };
 
 bool is_number(char character)
@@ -33,8 +33,13 @@ bool is_letter(char character)
            (character >= 'A' && character <= 'Z');
 };
 
-template <class T>
-std::set<T> to_set(std::vector<T> vector)
+bool is_number_friend(char character)
 {
-    return std::set(vector.begin(), vector.end());
+    return is_in_vector(number_friends, character);
 }
+
+// template <class T>
+// std::set<T> to_set(std::vector<T> vector)
+// {
+//     return std::set(vector.begin(), vector.end());
+// }
