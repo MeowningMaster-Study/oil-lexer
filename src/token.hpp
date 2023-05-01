@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -7,7 +9,8 @@ enum TokenType
     KEYWORD,
     OPERATOR,
     LITERAL,
-    PUNCTUATION
+    PUNCTUATION,
+    ILLEGAL
 };
 
 class TokenTypeUtils
@@ -27,6 +30,8 @@ public:
             return "Literal";
         case TokenType::PUNCTUATION:
             return "Punctuation";
+        case TokenType::ILLEGAL:
+            return "Illegal";
         default:
             throw std::runtime_error("Unknown token type");
         }
