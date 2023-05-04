@@ -49,8 +49,6 @@ private:
 public:
     Tokenizer(std::string text) : text(text) {}
 
-    std::optional<Token> break_buffer() {}
-
     std::optional<Token> next()
     {
         auto optional_char = this->next_char();

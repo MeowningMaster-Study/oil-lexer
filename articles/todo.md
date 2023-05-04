@@ -7,4 +7,6 @@
 - strings
 
 ## Other
-- string interpolation
+- Brace Expansion
+- Array Splice
+- Multi-line Commands
