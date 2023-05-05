@@ -1,6 +1,4 @@
 cd ../ # move
-echo $a; echo world
-echo hello\$; cat < meow.txt
-echo wor\\ld #end
-
+echo $a
+echo hello\$; cat < meow.txt && ls *.txt
 var x = a
