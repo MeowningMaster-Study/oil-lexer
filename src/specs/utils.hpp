@@ -50,6 +50,11 @@ namespace is
         return in_vector(number_friends, character);
     }
 
+    bool keyword(std::string identifier)
+    {
+        return in_vector(keywords, identifier);
+    }
+
     // template <class T>
     // std::set<T> to_set(std::vector<T> vector)
     // {
@@ -85,7 +90,8 @@ namespace is
         bool variable_body(char character)
         {
             return variable_start(character) ||
-                   number(character);
+                   number(character) ||
+                   character == '.';
         }
 
         bool number_start(char character)

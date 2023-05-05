@@ -5,3 +5,4 @@ setvar x += 5          # Increment by 5
 echo $x                # => 6
 
 var mylist = [x, 7]    # two integers [6, 7]
+_ L.append(x)
