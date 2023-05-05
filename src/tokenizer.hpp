@@ -54,7 +54,7 @@ private:
         case state::Type::EXPRESSION:
             return process_expression(character, (state::Expression *)state);
         case state::Type::STRING:
-            return process_string(character);
+            return process_string(character, (state::String *)state);
         case state::Type::COMMENT:
             return process_comment(character);
 
@@ -111,14 +111,14 @@ private:
         // COMMAND | KEYWORD | IDENTIFIER
         if (!state->named)
         {
-            if (is::command::name(character))
+            if (!is::symbol(begin_character) && is::command::name(character))
             {
                 return append_buffer(character);
             }
         }
         else if (
-            is::command::argument(character) ||
-            begin_character == '\0' && character == '$')
+            (begin_character == '\0' && character == '$') ||
+            ((begin_character == '$' || is::command::argument(begin_character)) && is::command::argument(character)))
         {
             return append_buffer(character);
         }
@@ -185,15 +185,38 @@ private:
             return flush_buffer(TokenType::PUNCTUATION);
         }
 
+        if (buffer == "_" || buffer_end() == '=')
+        {
+            delete states.emplace(new state::Expression());
+            return flush_buffer(TokenType::OPERATOR);
+        }
+
+        if (buffer == "\"")
+        {
+            states.push(new state::String(state::StringType::DOUBLE_QUOTED, false));
+            buffer.clear();
+            return std::nullopt;
+        }
+
+        if (buffer == "\'")
+        {
+            states.push(new state::String(state::StringType::SINGLE_QUOTED, false));
+            buffer.clear();
+            return std::nullopt;
+        }
+
+        if (buffer == "$'")
+        {
+            states.push(new state::String(state::StringType::C_STYLE, false));
+            buffer.clear();
+            return std::nullopt;
+        }
+
         if (
             is::symbol(begin_character) &&
             !is::command::argument(begin_character) &&
             begin_character != '$')
         {
-            if (buffer == "_" || buffer_end() == '=')
-            {
-                delete states.emplace(new state::Expression());
-            }
             return flush_buffer(TokenType::OPERATOR);
         }
 
@@ -314,8 +337,78 @@ private:
         return flush_buffer(TokenType::ILLEGAL);
     }
 
-    std::optional<Token> process_string(char character)
+    std::optional<Token> process_string(char character, state::String *state)
     {
+        auto type = state->string_type;
+
+        if (character == '\0')
+        {
+            return flush_string_buffer(state);
+        }
+
+        if (character == '\n')
+        {
+            if (state->multiline)
+            {
+                append_buffer(character);
+            }
+            else
+            {
+                auto flushed = flush_string_buffer(state);
+                delete states.emplace(new state::Command());
+                return flushed;
+            }
+        }
+
+        switch (type)
+        {
+        case state::StringType::DOUBLE_QUOTED:
+        case state::StringType::C_STYLE:
+            // DENOTE
+            if (state->denote)
+            {
+                state->denote = false;
+                return append_buffer(character);
+            }
+            if (character == '\\')
+            {
+                state->denote = true;
+                return std::nullopt;
+            }
+            break;
+        }
+
+        switch (type)
+        {
+        case state::StringType::SINGLE_QUOTED:
+        case state::StringType::C_STYLE:
+            if (character != '\'')
+            {
+                return append_buffer(character);
+            }
+            break;
+        case state::StringType::DOUBLE_QUOTED:
+            if (character == '"')
+            {
+                return flush_string_buffer(state);
+            }
+            return append_buffer(character);
+            break;
+
+        default:
+            throw std::runtime_error("Unknown string type");
+        }
+    }
+
+    std::optional<Token> flush_string_buffer(state::String *state)
+    {
+        auto begin_character = buffer_begin();
+        if (begin_character == '\0')
+        {
+            return std::nullopt;
+        }
+
+        return flush_buffer(TokenType::LITERAL);
     }
 
     std::optional<Token> process_comment(char character)

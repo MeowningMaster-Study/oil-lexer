@@ -1,1 +1,4 @@
-_ L.append(x)
+cd ../ # move
+echo $a
+echo hello\$; cat < meow.txt && ls *.txt
+var x = a
