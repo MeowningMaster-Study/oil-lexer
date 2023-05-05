@@ -171,6 +171,32 @@ private:
         return flushed;
     }
 
+    bool flush_string_begin()
+    {
+        if (buffer == "\"")
+        {
+            states.push(new state::String(state::StringType::DOUBLE_QUOTED, false));
+            buffer.clear();
+            return true;
+        }
+
+        if (buffer == "\'")
+        {
+            states.push(new state::String(state::StringType::SINGLE_QUOTED, false));
+            buffer.clear();
+            return true;
+        }
+
+        if (buffer == "$'")
+        {
+            states.push(new state::String(state::StringType::C_STYLE, false));
+            buffer.clear();
+            return true;
+        }
+
+        return false;
+    }
+
     std::optional<Token> flush_command_buffer(state::Command *state)
     {
         auto begin_character = buffer_begin();
@@ -191,24 +217,8 @@ private:
             return flush_buffer(TokenType::OPERATOR);
         }
 
-        if (buffer == "\"")
+        if (flush_string_begin())
         {
-            states.push(new state::String(state::StringType::DOUBLE_QUOTED, false));
-            buffer.clear();
-            return std::nullopt;
-        }
-
-        if (buffer == "\'")
-        {
-            states.push(new state::String(state::StringType::SINGLE_QUOTED, false));
-            buffer.clear();
-            return std::nullopt;
-        }
-
-        if (buffer == "$'")
-        {
-            states.push(new state::String(state::StringType::C_STYLE, false));
-            buffer.clear();
             return std::nullopt;
         }
 
@@ -325,6 +335,11 @@ private:
             return flush_buffer(TokenType::LITERAL);
         }
 
+        if (flush_string_begin())
+        {
+            return std::nullopt;
+        }
+
         if (is::symbol(begin_character))
         {
             if (is::punctuation(begin_character))
@@ -408,6 +423,7 @@ private:
             return std::nullopt;
         }
 
+        states.pop();
         return flush_buffer(TokenType::LITERAL);
     }
 

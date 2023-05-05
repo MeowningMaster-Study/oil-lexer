@@ -1,4 +1,8 @@
-cd ../ # move
-echo $a
-echo hello\$; cat < meow.txt && ls *.txt
-var x = a
+var x = 42             # an integer, not a string
+setvar x = min(x, 1)   # mutate with the 'setvar' keyword
+
+setvar x += 5          # Increment by 5
+echo $x                # => 6
+
+var mylist = [x, 7]    # two integers [6, 7]
+_ L.append(x)
