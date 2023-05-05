@@ -150,20 +150,17 @@ private:
                     state::Expression *new_state = new state::Expression();
                     new_state->substitution = true;
                     states.push(new_state);
-                    return flush_command_buffer(state);
+                    append_buffer(character);
+                    return flush_buffer(TokenType::PUNCTUATION);
                 }
 
                 if (
                     (concated == "||") ||
                     (concated == "&&"))
                 {
-                    return append_buffer(character);
-                }
-                else
-                {
-                    auto flushed = flush_command_buffer(state);
+                    delete states.emplace(new state::Command());
                     append_buffer(character);
-                    return flushed;
+                    return flush_buffer(TokenType::OPERATOR);
                 }
             }
         }
@@ -196,7 +193,7 @@ private:
             if (buffer == "_" || buffer_end() == '=')
             {
                 delete states.emplace(new state::Expression());
-            };
+            }
             return flush_buffer(TokenType::OPERATOR);
         }
 
