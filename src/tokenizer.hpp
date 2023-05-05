@@ -6,13 +6,7 @@
 
 #include "token.hpp"
 #include "specs/utils.hpp"
-
-enum CommentState
-{
-    NONE,
-    SINGLE_LINE,
-    MULTILINE
-};
+#include "state-stack.hpp"
 
 class Tokenizer
 {
@@ -30,50 +24,112 @@ private:
     }
 
     std::string buffer;
-    StateStack states;
+    state::Stack states;
 
-    /**
-     * Is similar to identifier. May be:
-     * - identifier
-     * - keyword
-     * - wordly operator
-     */
-    bool is_identifiery = false;
+    inline bool is_buffer_empty()
+    {
+        return buffer.length() == 0;
+    }
 
-    /**
-     * Is similar to number literal (integer or float)
-     */
-    bool is_numbery = false;
+    std::optional<char> buffer_begin()
+    {
+        if (is_buffer_empty())
+        {
+            return std::nullopt;
+        }
+        return buffer[0];
+    };
+
+    Token flush_buffer(TokenType type)
+    {
+        Token token{type, buffer};
+        buffer.clear();
+        return token;
+    }
 
     std::optional<Token> process_character(char character)
     {
         auto state = states.top();
         switch (state->type)
         {
-        case StateType::COMMAND:
-            return process_command(character);
-        case StateType::EXPRESSION:
+        case state::Type::COMMAND:
+            return process_command(character, (state::Command *)state);
+        case state::Type::EXPRESSION:
             return process_expression(character);
-        case StateType::STRING:
+        case state::Type::STRING:
             return process_string(character);
-        case StateType::COMMENT:
+        case state::Type::COMMENT:
             return process_comment(character);
 
         default:
             throw std::runtime_error("Unknown state");
         }
-
-        // if (is_punctuation(character))
-        // {
-        //     return Token{
-        //         TokenType::PUNCTUATION, std::string{character}};
-        // }
-
-        // return Token{TokenType::ILLEGAL, std::string{character}};
     }
 
-    std::optional<Token> process_command(char character)
+    std::optional<Token> append_buffer(char character)
     {
+        buffer.push_back(character);
+        return std::nullopt;
+    }
+
+    std::optional<Token> process_command(char character, state::Command *state)
+    {
+        if (character == ' ')
+        {
+            return flush_command_buffer(state);
+        }
+
+        if (character == '#')
+        {
+            states.push(new state::Comment());
+            return flush_command_buffer(state);
+        }
+
+        if (!state->named)
+        {
+            if (is::command::name(character))
+            {
+                return append_buffer(character);
+            }
+        }
+        else
+        {
+            if (is::command::argument(character))
+            {
+                return append_buffer(character);
+            }
+        }
+
+        append_buffer(character);
+        return flush_command_buffer(state);
+    }
+
+    std::optional<Token> flush_command_buffer(state::Command *state)
+    {
+        auto character_option = buffer_begin();
+        if (!character_option.has_value())
+        {
+            return std::nullopt;
+        }
+        char character = character_option.value();
+
+        if (!state->named)
+        {
+            if (is::command::name(character))
+            {
+                state->named = true;
+                return flush_buffer(TokenType::IDENTIFIER);
+            }
+        }
+        else
+        {
+            if (is::command::argument(character))
+            {
+                return flush_buffer(TokenType::LITERAL);
+            }
+        }
+
+        return flush_buffer(TokenType::ILLEGAL);
     }
 
     std::optional<Token> process_expression(char character)
@@ -86,6 +142,11 @@ private:
 
     std::optional<Token> process_comment(char character)
     {
+        if (character == '\n' || character == '\0')
+        {
+            states.pop();
+        }
+        return std::nullopt;
     }
 
 public:
@@ -99,7 +160,7 @@ public:
             auto optional_char = this->next_char();
             if (!optional_char.has_value())
             {
-                if (buffer.length() == 0)
+                if (is_buffer_empty())
                 {
                     return std::nullopt;
                 }

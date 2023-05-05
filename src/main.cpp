@@ -2,7 +2,6 @@
 #include <stdexcept>
 
 #include "file.hpp"
-#include "state-stack.hpp"
 
 int main(int argc, char const *argv[])
 {
