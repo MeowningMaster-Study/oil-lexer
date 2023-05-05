@@ -19,12 +19,15 @@ bool is_punctuation(char character)
 
 bool is_whitespace(char character)
 {
-    return is_in_vector(whitespaces, character);
+    return character == ' ' ||
+           character == '\n' ||
+           character == '\t';
 };
 
 bool is_number(char character)
 {
-    return character >= '0' && character <= '9';
+    return character >= '0' &&
+           character <= '9';
 };
 
 bool is_letter(char character)
@@ -43,3 +46,20 @@ bool is_number_friend(char character)
 // {
 //     return std::set(vector.begin(), vector.end());
 // }
+
+// COMMAND MODE
+bool is_command_name(char character)
+{
+    return is_letter(character) ||
+           is_number(character) ||
+           character == '_';
+}
+
+bool is_command_argument(char character)
+{
+    return is_letter(character) ||
+           is_number(character) ||
+           character == '_' ||
+           character == '.' ||
+           character == '-';
+}

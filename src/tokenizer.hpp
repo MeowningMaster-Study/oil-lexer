@@ -22,7 +22,7 @@ private:
 
     std::optional<char> next_char()
     {
-        if (position > text.length())
+        if (position >= text.length())
         {
             return std::nullopt;
         }
@@ -30,6 +30,7 @@ private:
     }
 
     std::string buffer;
+    StateStack states;
 
     /**
      * Is similar to identifier. May be:
@@ -44,32 +45,71 @@ private:
      */
     bool is_numbery = false;
 
-    CommentState commentState;
+    std::optional<Token> process_character(char character)
+    {
+        auto state = states.top();
+        switch (state->type)
+        {
+        case StateType::COMMAND:
+            return process_command(character);
+        case StateType::EXPRESSION:
+            return process_expression(character);
+        case StateType::STRING:
+            return process_string(character);
+        case StateType::COMMENT:
+            return process_comment(character);
+
+        default:
+            throw std::runtime_error("Unknown state");
+        }
+
+        // if (is_punctuation(character))
+        // {
+        //     return Token{
+        //         TokenType::PUNCTUATION, std::string{character}};
+        // }
+
+        // return Token{TokenType::ILLEGAL, std::string{character}};
+    }
+
+    std::optional<Token> process_command(char character)
+    {
+    }
+
+    std::optional<Token> process_expression(char character)
+    {
+    }
+
+    std::optional<Token> process_string(char character)
+    {
+    }
+
+    std::optional<Token> process_comment(char character)
+    {
+    }
 
 public:
     Tokenizer(std::string text) : text(text) {}
 
     std::optional<Token> next()
     {
-        auto optional_char = this->next_char();
-        if (!optional_char.has_value())
+        std::optional<Token> next_token;
+        do
         {
-            if (buffer.length() == 0)
+            auto optional_char = this->next_char();
+            if (!optional_char.has_value())
             {
-                return std::nullopt;
+                if (buffer.length() == 0)
+                {
+                    return std::nullopt;
+                }
+
+                // TODO: flush buffer
             }
-
-            // TODO: flush buffer
-        }
-        char character = optional_char.value();
-
-        if (is_punctuation(character))
-        {
-            return Token{
-                TokenType::PUNCTUATION, std::string{character}};
-        }
-
-        return Token{TokenType::ILLEGAL, std::string{character}};
+            char character = optional_char.value();
+            next_token = process_character(character);
+        } while (!next_token.has_value());
+        return next_token;
     }
 
     Tokens consume()

@@ -31,12 +31,6 @@ std::vector<char> punctuations = {
     ';',
 };
 
-std::vector<char> whitespaces = {
-    ' ',
-    '\n',
-    '\t',
-    '\0'};
-
 std::vector<std::string> symbol_operators = {
     "++",
     "===",

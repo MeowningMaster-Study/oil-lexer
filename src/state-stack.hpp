@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <stdexcept>
-#include <memory>
 
 // https://www.oilshell.org/release/latest/doc/command-vs-expression-mode.html
 
@@ -60,7 +59,12 @@ struct ExpressionState : State
      * Disambiguates such expressions
      * > echo $[42 + a[i]]
      */
-    int bracketsCount = 0;
+    int brackets_count = 0;
+
+    /**
+     * Indicates wheter expression name is already tokenized
+     */
+    bool named = false;
 };
 
 enum StringStateType
@@ -84,7 +88,7 @@ public:
     bool denote = false;
 };
 
-using StatePtr = std::unique_ptr<State>;
+using StatePtr = State *;
 
 class StateStack
 {
@@ -94,7 +98,7 @@ private:
 public:
     StateStack()
     {
-        data.push_back(std::make_unique<CommandState>());
+        data.push_back(new CommandState);
     }
 
     void push(StatePtr state)
@@ -102,23 +106,28 @@ public:
         data.push_back(state);
     }
 
-    StatePtr pop()
+    StatePtr top()
     {
         if (data.empty())
         {
-            throw std::runtime_error("No state pop");
+            throw std::runtime_error("No state on top");
         }
 
-        auto result = std::move(data.back());
+        return data.back();
+    }
+
+    StatePtr pop()
+    {
+        auto result = this->top();
         data.pop_back();
         return result;
     }
 
-    State emplace(StatePtr state)
+    void emplace(StatePtr state)
     {
         if (data.empty())
         {
-            throw std::runtime_error("No state emplace");
+            throw std::runtime_error("No state to emplace");
         }
 
         data.emplace_back(state);
