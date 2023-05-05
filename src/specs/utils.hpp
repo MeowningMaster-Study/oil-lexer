@@ -38,6 +38,13 @@ namespace is
                (character >= 'A' && character <= 'Z');
     };
 
+    bool symbol(char character)
+    {
+        return !whitespace(character) &&
+               !number(character) &&
+               !letter(character);
+    }
+
     bool number_friend(char character)
     {
         return in_vector(number_friends, character);
@@ -64,6 +71,16 @@ namespace is
                    character == '.' ||
                    character == '-' ||
                    character == '/';
+        }
+    }
+
+    namespace expression
+    {
+        bool variable(char character)
+        {
+            return letter(character) ||
+                   number(character) ||
+                   character == '_';
         }
     }
 }

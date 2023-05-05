@@ -5,6 +5,7 @@
 
 enum TokenType
 {
+    COMMAND,
     IDENTIFIER,
     KEYWORD,
     OPERATOR,
@@ -20,6 +21,8 @@ public:
     {
         switch (type)
         {
+        case TokenType::COMMAND:
+            return "Command";
         case TokenType::IDENTIFIER:
             return "Identifier";
         case TokenType::KEYWORD:

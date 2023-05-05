@@ -1,0 +1,6 @@
+cd ../ # move
+echo $a; echo world
+echo hello\$; cat < meow.txt
+echo wor\\ld #end
+
+var x = a

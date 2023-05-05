@@ -39,8 +39,10 @@ namespace state
 
     struct Command : State
     {
+        Command() { this->type = Type::COMMAND; };
+
         /**
-         * - echo /$
+         * - echo \$
          */
         bool denote = false;
 
@@ -57,6 +59,8 @@ namespace state
 
     struct Expression : State
     {
+        Expression() { this->type = Type::EXPRESSION; };
+
         /**
          * > echo $[2 + 2]
          */
@@ -81,6 +85,8 @@ namespace state
 
     struct String : State
     {
+        String() { this->type = Type::STRING; };
+
         StringType string_type;
         bool multiline = false;
         /**
@@ -91,6 +97,7 @@ namespace state
 
     struct Comment : State
     {
+        Comment() { this->type = Type::COMMENT; };
     };
 
     using Ptr = State *;
@@ -128,14 +135,16 @@ namespace state
             return result;
         }
 
-        void emplace(Ptr state)
+        Ptr emplace(Ptr state)
         {
             if (data.empty())
             {
                 throw std::runtime_error("No state to emplace");
             }
 
+            auto top_state = top();
             data.emplace_back(state);
+            return top_state;
         }
     };
 }

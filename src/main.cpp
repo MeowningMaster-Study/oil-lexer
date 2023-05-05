@@ -11,9 +11,15 @@ int main(int argc, char const *argv[])
     }
     std::string file_path = argv[1];
 
-    auto tokens = tokenize_file(file_path);
-    for (auto token : tokens)
+    auto file_content = file::read(file_path);
+    auto tokenizer = new Tokenizer(file_content);
+    while (true)
     {
-        std::cout << token << '\n';
+        auto token = tokenizer->next();
+        if (!token.has_value())
+        {
+            break;
+        }
+        std::cout << token.value() << '\n';
     }
 }

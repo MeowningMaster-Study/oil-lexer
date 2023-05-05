@@ -14,12 +14,8 @@ private:
     int position = 0;
     std::string text;
 
-    std::optional<char> next_char()
+    char next_char()
     {
-        if (position >= text.length())
-        {
-            return std::nullopt;
-        }
         return text[position++];
     }
 
@@ -31,14 +27,15 @@ private:
         return buffer.length() == 0;
     }
 
-    std::optional<char> buffer_begin()
+    char buffer_begin()
     {
-        if (is_buffer_empty())
-        {
-            return std::nullopt;
-        }
         return buffer[0];
     };
+
+    char buffer_end()
+    {
+        return buffer[buffer.length() - 1];
+    }
 
     Token flush_buffer(TokenType type)
     {
@@ -55,7 +52,7 @@ private:
         case state::Type::COMMAND:
             return process_command(character, (state::Command *)state);
         case state::Type::EXPRESSION:
-            return process_expression(character);
+            return process_expression(character, (state::Expression *)state);
         case state::Type::STRING:
             return process_string(character);
         case state::Type::COMMENT:
@@ -74,17 +71,59 @@ private:
 
     std::optional<Token> process_command(char character, state::Command *state)
     {
-        if (character == ' ')
+        // WHITESPACE
+        if (character == ' ' || character == '\t' || character == '\0')
         {
             return flush_command_buffer(state);
         }
 
+        if (character == '\n')
+        {
+            auto old_state = states.emplace(new state::Command());
+            auto flushed = flush_command_buffer(state);
+            delete old_state;
+            return flushed;
+        }
+
+        // DENOTE
+        if (state->denote)
+        {
+            append_buffer(character);
+            state->denote = false;
+            return std::nullopt;
+        }
+
+        if (character == '\\')
+        {
+            state->denote = true;
+            return std::nullopt;
+        }
+
+        // COMMENT
         if (character == '#')
         {
             states.push(new state::Comment());
             return flush_command_buffer(state);
         }
 
+        // SYMBOLS
+
+        if (character == ';')
+        {
+            auto flushed = flush_command_buffer(state);
+            append_buffer(character);
+            return flushed;
+        }
+
+        char is_symbol = is::symbol(character);
+        char begin_character = buffer_begin();
+        bool begin_is_symbol = is::symbol(begin_character);
+        if (is_symbol && (begin_character == '\0' || begin_is_symbol))
+        {
+            return append_buffer(character);
+        }
+
+        // COMMAND | KEYWORD | IDENTIFIER
         if (!state->named)
         {
             if (is::command::name(character))
@@ -92,48 +131,98 @@ private:
                 return append_buffer(character);
             }
         }
-        else
+        else if (is::command::argument(character))
         {
-            if (is::command::argument(character))
-            {
-                return append_buffer(character);
-            }
+            return append_buffer(character);
         }
 
+        // ILLEGAL
+        auto flushed = flush_command_buffer(state);
         append_buffer(character);
-        return flush_command_buffer(state);
+        return flushed;
     }
 
     std::optional<Token> flush_command_buffer(state::Command *state)
     {
-        auto character_option = buffer_begin();
-        if (!character_option.has_value())
+        auto begin_character = buffer_begin();
+        if (begin_character == '\0')
         {
             return std::nullopt;
         }
-        char character = character_option.value();
+
+        if (buffer == ";")
+        {
+            delete states.emplace(new state::Command());
+            return flush_buffer(TokenType::PUNCTUATION);
+        }
 
         if (!state->named)
         {
-            if (is::command::name(character))
+            if (is::command::name(begin_character))
             {
                 state->named = true;
-                return flush_buffer(TokenType::IDENTIFIER);
+                return flush_buffer(TokenType::COMMAND);
             }
         }
         else
         {
-            if (is::command::argument(character))
+            if (is::command::argument(begin_character))
             {
                 return flush_buffer(TokenType::LITERAL);
             }
+            if (begin_character == '$')
+            {
+                return flush_buffer(TokenType::IDENTIFIER);
+            }
+        }
+
+        if (is::symbol(begin_character))
+        {
+            if (buffer == "_" || buffer_end() == '=')
+            {
+                delete states.emplace(new state::Expression());
+            };
+            return flush_buffer(TokenType::OPERATOR);
         }
 
         return flush_buffer(TokenType::ILLEGAL);
     }
 
-    std::optional<Token> process_expression(char character)
+    std::optional<Token> process_expression(char character, state::Expression *state)
     {
+        // COMMENT
+        if (character == '#')
+        {
+            states.push(new state::Comment());
+            return flush_expression_buffer(state);
+        }
+
+        // IDENTIFIER
+        if (is::expression::variable(character))
+        {
+            return append_buffer(character);
+        }
+
+        // ILLEGAL
+        auto flushed = flush_expression_buffer(state);
+        append_buffer(character);
+        return flushed;
+    }
+
+    std::optional<Token> flush_expression_buffer(state::Expression *state)
+    {
+        auto begin_character = buffer_begin();
+        if (begin_character == '\0')
+        {
+            return std::nullopt;
+        }
+
+        if (is::expression::variable(begin_character))
+        {
+            return flush_buffer(TokenType::IDENTIFIER);
+        }
+
+        return flush_buffer(TokenType::ILLEGAL);
     }
 
     std::optional<Token> process_string(char character)
@@ -142,9 +231,10 @@ private:
 
     std::optional<Token> process_comment(char character)
     {
-        if (character == '\n' || character == '\0')
+        if (character == '\n')
         {
-            states.pop();
+            delete states.pop();
+            delete states.emplace(new state::Command());
         }
         return std::nullopt;
     }
@@ -157,34 +247,29 @@ public:
         std::optional<Token> next_token;
         do
         {
-            auto optional_char = this->next_char();
-            if (!optional_char.has_value())
+            if (position > text.length())
             {
-                if (is_buffer_empty())
-                {
-                    return std::nullopt;
-                }
-
-                // TODO: flush buffer
+                return std::nullopt;
             }
-            char character = optional_char.value();
+
+            auto character = this->next_char();
             next_token = process_character(character);
         } while (!next_token.has_value());
         return next_token;
     }
 
-    Tokens consume()
-    {
-        Tokens tokens;
-        while (true)
-        {
-            auto x = this->next();
-            if (!x.has_value())
-            {
-                break;
-            }
-            tokens.push_back(x.value());
-        }
-        return tokens;
-    }
+    // Tokens consume()
+    // {
+    //     Tokens tokens;
+    //     while (true)
+    //     {
+    //         auto x = this->next();
+    //         if (!x.has_value())
+    //         {
+    //             break;
+    //         }
+    //         tokens.push_back(x.value());
+    //     }
+    //     return tokens;
+    // }
 };
