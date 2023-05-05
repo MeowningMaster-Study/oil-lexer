@@ -190,6 +190,20 @@ private:
 
     std::optional<Token> process_expression(char character, state::Expression *state)
     {
+        // WHITESPACE
+        if (character == ' ' || character == '\t' || character == '\0')
+        {
+            return flush_expression_buffer(state);
+        }
+
+        if (character == '\n')
+        {
+            auto old_state = states.emplace(new state::Command());
+            auto flushed = flush_expression_buffer(state);
+            delete old_state;
+            return flushed;
+        }
+
         // COMMENT
         if (character == '#')
         {
@@ -197,8 +211,33 @@ private:
             return flush_expression_buffer(state);
         }
 
+        auto begin_character = buffer_begin();
+
         // IDENTIFIER
-        if (is::expression::variable(character))
+        if (
+            (
+                begin_character == '\0' &&
+                is::expression::variable_start(character)) ||
+            (is::expression::variable_start(begin_character) &&
+             is::expression::variable_body(character)))
+        {
+            return append_buffer(character);
+        }
+
+        // NUMBER LITERAL
+        if ((
+                begin_character == '\0' &&
+                is::expression::number_start(character)) ||
+            (is::expression::number_start(begin_character) &&
+             is::expression::number_body(character)))
+        {
+            return append_buffer(character);
+        }
+
+        // SYMBOL
+        char is_symbol = is::symbol(character);
+        bool begin_is_symbol = is::symbol(begin_character);
+        if (is_symbol && (begin_character == '\0' || begin_is_symbol))
         {
             return append_buffer(character);
         }
@@ -217,9 +256,23 @@ private:
             return std::nullopt;
         }
 
-        if (is::expression::variable(begin_character))
+        if (is::expression::variable_start(begin_character))
         {
             return flush_buffer(TokenType::IDENTIFIER);
+        }
+
+        if (is::expression::number_start(begin_character))
+        {
+            return flush_buffer(TokenType::LITERAL);
+        }
+
+        if (is::symbol(begin_character))
+        {
+            if (is::punctuation(begin_character))
+            {
+                return flush_buffer(TokenType::PUNCTUATION);
+            }
+            return flush_buffer(TokenType::OPERATOR);
         }
 
         return flush_buffer(TokenType::ILLEGAL);

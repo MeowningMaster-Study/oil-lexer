@@ -76,11 +76,26 @@ namespace is
 
     namespace expression
     {
-        bool variable(char character)
+        bool variable_start(char character)
         {
             return letter(character) ||
-                   number(character) ||
                    character == '_';
+        }
+
+        bool variable_body(char character)
+        {
+            return variable_start(character) ||
+                   number(character);
+        }
+
+        bool number_start(char character)
+        {
+            return number(character);
+        }
+
+        bool number_body(char character)
+        {
+            return number(character) || number_friend(character);
         }
     }
 }
