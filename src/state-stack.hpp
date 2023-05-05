@@ -35,11 +35,13 @@ namespace state
     struct State
     {
         Type type;
+
+        State(Type type) : type(type){};
     };
 
     struct Command : State
     {
-        Command() { this->type = Type::COMMAND; };
+        Command() : State(Type::COMMAND){};
 
         /**
          * - echo \$
@@ -59,7 +61,7 @@ namespace state
 
     struct Expression : State
     {
-        Expression() { this->type = Type::EXPRESSION; };
+        Expression(bool substitution = false) : State(Type::EXPRESSION), substitution(substitution){};
 
         /**
          * > echo $[2 + 2]
@@ -85,10 +87,14 @@ namespace state
 
     struct String : State
     {
-        String() { this->type = Type::STRING; };
+        String(
+            StringType string_type,
+            bool multiline) : State(Type::STRING),
+                              string_type(string_type),
+                              multiline(multiline){};
 
         StringType string_type;
-        bool multiline = false;
+        bool multiline;
         /**
          * > echo "\$ \" \\ "
          */
@@ -97,7 +103,7 @@ namespace state
 
     struct Comment : State
     {
-        Comment() { this->type = Type::COMMENT; };
+        Comment() : State(Type::COMMENT){};
     };
 
     using Ptr = State *;
