@@ -75,7 +75,9 @@ namespace is
             return name(character) ||
                    character == '.' ||
                    character == '-' ||
-                   character == '/';
+                   character == '/' ||
+                   character == '*' ||
+                   character == '?';
         }
     }
 
