@@ -147,13 +147,15 @@ private:
                 if (
                     (concated == "$["))
                 {
-                    states.push(new state::Expression());
+                    state::Expression *new_state = new state::Expression();
+                    new_state->substitution = true;
+                    states.push(new_state);
                     return flush_command_buffer(state);
                 }
 
                 if (
-                    (begin_character == '||') ||
-                    (begin_character == '&&'))
+                    (concated == "||") ||
+                    (concated == "&&"))
                 {
                     return append_buffer(character);
                 }
