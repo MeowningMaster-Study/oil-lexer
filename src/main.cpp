@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include "file.hpp"
+#include "tokenizer/tokenizer.hpp"
 
 int main(int argc, char const *argv[])
 {

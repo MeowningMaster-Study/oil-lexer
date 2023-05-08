@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include "tokenizer.hpp"
+#include "tokenizer/tokenizer.hpp"
 
 namespace file
 {
