@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <set>
 
-#include "raw.hpp"
+#include "dictionaries.hpp"
 
 namespace is
 {
