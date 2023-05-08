@@ -8,10 +8,7 @@
 #include "../specs/utils.hpp"
 #include "../state/index.hpp"
 
-#include "processors/command.hpp"
-#include "processors/expression.hpp"
-#include "processors/string.hpp"
-#include "processors/comment.hpp"
+#include "processors/index.hpp"
 
 class Tokenizer
 {

@@ -16,7 +16,7 @@ namespace processor
 
         explicit Processor(state::Stack &states, std::string &buffer) : states(states), buffer(buffer) {}
 
-        virtual std::optional<Token> process(char character, state::State *state) {}
+        // virtual std::optional<Token> process(char character, state::State *state) {}
 
         inline bool is_buffer_empty()
         {

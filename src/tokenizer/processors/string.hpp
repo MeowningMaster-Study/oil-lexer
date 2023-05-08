@@ -70,6 +70,8 @@ namespace processor
             default:
                 throw std::runtime_error("Unknown string type");
             }
+
+            throw std::runtime_error("Unreachable state");
         }
 
         std::optional<Token> flush_string(state::String *state)
