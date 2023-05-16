@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <stdexcept>
+#include <iostream>
 
 #include "./state.hpp"
 
@@ -11,16 +12,21 @@ namespace state
     {
     private:
         std::vector<Ptr> data;
+        bool log = false;
 
     public:
         Stack()
         {
-            data.push_back(new Command());
+            this->push(new Command());
         }
 
         void push(Ptr state)
         {
             data.push_back(state);
+            if (this->log)
+            {
+                std::cout << "> State pushed: " << state::TypeUtils::toString(state->type) << "\n";
+            }
         }
 
         Ptr top()
@@ -35,8 +41,13 @@ namespace state
 
         Ptr pop()
         {
+
             auto result = this->top();
             data.pop_back();
+            if (this->log)
+            {
+                std::cout << "> State popped. New state is: " << state::TypeUtils::toString(this->top()->type) << "\n";
+            }
             return result;
         }
 
@@ -49,6 +60,10 @@ namespace state
 
             auto top_state = top();
             data.emplace_back(state);
+            if (this->log)
+            {
+                std::cout << "> State emplaced. New state is: " << state::TypeUtils::toString(state->type) << "\n";
+            }
             return top_state;
         }
     };

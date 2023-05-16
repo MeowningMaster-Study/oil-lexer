@@ -106,4 +106,19 @@ namespace is
             return number(character) || number_friend(character);
         }
     }
+
+    namespace identifier
+    {
+        bool begin(char character)
+        {
+            return letter(character) ||
+                   character == '_';
+        }
+
+        bool body(char character)
+        {
+            return begin(character) ||
+                   number(character);
+        }
+    }
 }

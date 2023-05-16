@@ -26,7 +26,31 @@ namespace state
          * > echo "hi" # prints hi
          */
         COMMENT,
-        STRING
+        STRING,
+        IDENTIFIER,
+    };
+
+    class TypeUtils
+    {
+    public:
+        static std::string toString(Type type)
+        {
+            switch (type)
+            {
+            case Type::COMMAND:
+                return "Command";
+            case Type::EXPRESSION:
+                return "Expression";
+            case Type::COMMENT:
+                return "Comment";
+            case Type::STRING:
+                return "String";
+            case Type::IDENTIFIER:
+                return "Identifier";
+            default:
+                throw std::runtime_error("Unknown type");
+            }
+        }
     };
 
     struct State
@@ -35,6 +59,8 @@ namespace state
 
         State(Type type) : type(type){};
     };
+
+    using Ptr = State *;
 
     struct Command : State
     {
@@ -103,5 +129,10 @@ namespace state
         Comment() : State(Type::COMMENT){};
     };
 
-    using Ptr = State *;
+    struct Identifier : State
+    {
+        Identifier(bool substitution) : State(Type::IDENTIFIER), substitution(substitution){};
+
+        bool substitution;
+    };
 }

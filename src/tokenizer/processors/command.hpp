@@ -14,13 +14,13 @@ namespace processor
             // WHITESPACE
             if (character == ' ' || character == '\t' || character == '\0')
             {
-                return flush_command(state);
+                return flush(state);
             }
 
             if (character == '\n')
             {
                 auto old_state = states.emplace(new state::Command());
-                auto flushed = flush_command(state);
+                auto flushed = flush(state);
                 delete old_state;
                 return flushed;
             }
@@ -43,78 +43,90 @@ namespace processor
             if (character == '#')
             {
                 states.push(new state::Comment());
-                return flush_command(state);
+                return flush(state);
             }
 
             char begin_character = buffer_begin();
 
-            // COMMAND | KEYWORD | IDENTIFIER
-            if (!state->named)
+            if (character == '$')
             {
-                if (!is::symbol(begin_character) && is::command::name(character))
-                {
-                    return append_buffer(character);
-                }
-            }
-            else if (
-                (begin_character == '\0' && character == '$') ||
-                ((begin_character == '$' || is::command::argument(begin_character)) && is::command::argument(character)))
-            {
-                return append_buffer(character);
+                states.push(new state::Identifier(false));
+                return flush(state);
             }
 
             // SYMBOLS
 
             if (character == ';')
             {
-                auto flushed = flush_command(state);
+                auto flushed = flush(state);
                 append_buffer(character);
                 return flushed;
             }
 
             char is_symbol = is::symbol(character);
             bool begin_is_symbol = is::symbol(begin_character);
-            if (is_symbol)
+
+            if (is_symbol && is_buffer_empty())
             {
-                if (begin_character == '\0')
+                return append_buffer(character);
+            }
+
+            if (begin_is_symbol && is_symbol)
+            {
+                auto concated = buffer + character;
+                // EXPRESSION SUBSTITUTION
+                if (
+                    (concated == "$["))
+                {
+                    state::Expression *new_state = new state::Expression();
+                    new_state->substitution = true;
+                    states.push(new_state);
+                    append_buffer(character);
+                    return flush_buffer(TokenType::PUNCTUATION);
+                }
+
+                if (
+                    (concated == "||") ||
+                    (concated == "&&"))
+                {
+                    delete states.emplace(new state::Command());
+                    append_buffer(character);
+                    return flush_buffer(TokenType::OPERATOR);
+                }
+
+                return append_buffer(character);
+            }
+
+            if (begin_is_symbol)
+            {
+                auto flushed = flush(state);
+                append_buffer(character);
+                return flushed;
+            }
+
+            // COMMAND | KEYWORD
+            if (!state->named)
+            {
+                if (is::command::name(character))
                 {
                     return append_buffer(character);
                 }
-                if (begin_is_symbol)
-                {
-                    auto concated = buffer + character;
-                    // EXPRESSION SUBSTITUTION
-                    if (
-                        (concated == "$["))
-                    {
-                        state::Expression *new_state = new state::Expression();
-                        new_state->substitution = true;
-                        states.push(new_state);
-                        append_buffer(character);
-                        return flush_buffer(TokenType::PUNCTUATION);
-                    }
-
-                    if (
-                        (concated == "||") ||
-                        (concated == "&&"))
-                    {
-                        delete states.emplace(new state::Command());
-                        append_buffer(character);
-                        return flush_buffer(TokenType::OPERATOR);
-                    }
-                }
+            }
+            else if (is::command::argument(character))
+            {
+                return append_buffer(character);
             }
 
             // ILLEGAL
-            auto flushed = flush_command(state);
+            auto flushed = flush(state);
             append_buffer(character);
             return flushed;
         }
 
-        std::optional<Token> flush_command(state::Command *state)
+        std::optional<Token> flush(state::Command *state)
         {
             auto begin_character = buffer_begin();
-            if (begin_character == '\0')
+            if (is_buffer_empty())
             {
                 return std::nullopt;
             }

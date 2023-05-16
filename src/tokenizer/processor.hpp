@@ -5,6 +5,7 @@
 
 #include "../token.hpp"
 #include "../state/index.hpp"
+#include "../specs/validators.hpp"
 
 namespace processor
 {

@@ -28,6 +28,7 @@ private:
     processor::Expression expression_processor;
     processor::String string_processor;
     processor::Comment comment_processor;
+    processor::Identifier identifier_processor;
 
     std::optional<Token>
     process_character(char character)
@@ -43,6 +44,8 @@ private:
             return string_processor.process(character, (state::String *)state);
         case state::Type::COMMENT:
             return comment_processor.process(character);
+        case state::Type::IDENTIFIER:
+            return identifier_processor.process(character, (state::Identifier *)state);
 
         default:
             throw std::runtime_error("Unknown state");
@@ -54,7 +57,8 @@ public:
                                   command_processor(states, buffer),
                                   expression_processor(states, buffer),
                                   string_processor(states, buffer),
-                                  comment_processor(states, buffer) {}
+                                  comment_processor(states, buffer),
+                                  identifier_processor(states, buffer) {}
 
     std::optional<Token> next()
     {

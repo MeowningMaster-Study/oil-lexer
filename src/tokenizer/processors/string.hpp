@@ -15,7 +15,7 @@ namespace processor
 
             if (character == '\0')
             {
-                return flush_string(state);
+                return flush(state);
             }
 
             if (character == '\n')
@@ -26,17 +26,18 @@ namespace processor
                 }
                 else
                 {
-                    auto flushed = flush_string(state);
+                    auto flushed = flush(state);
                     delete states.emplace(new state::Command());
                     return flushed;
                 }
             }
 
+            // DENOTE
             switch (type)
             {
             case state::StringType::DOUBLE_QUOTED:
             case state::StringType::C_STYLE:
-                // DENOTE
+
                 if (state->denote)
                 {
                     state->denote = false;
@@ -54,15 +55,26 @@ namespace processor
             {
             case state::StringType::SINGLE_QUOTED:
             case state::StringType::C_STYLE:
-                if (character != '\'')
+                if (character == '\'')
                 {
-                    return append_buffer(character);
+                    return flush(state);
                 }
+                return append_buffer(character);
                 break;
             case state::StringType::DOUBLE_QUOTED:
                 if (character == '"')
                 {
-                    return flush_string(state);
+                    return flush(state);
+                }
+                if (character == '$')
+                {
+                    auto flushed = flush(state, false);
+                    append_buffer(character);
+                    return flushed;
+                }
+                if (buffer_begin() == '$')
+                {
+                    return process_substitution(character);
                 }
                 return append_buffer(character);
                 break;
@@ -74,16 +86,49 @@ namespace processor
             throw std::runtime_error("Unreachable state");
         }
 
-        std::optional<Token> flush_string(state::String *state)
+        std::optional<Token> flush(state::String *state, bool pop_state = true)
         {
-            auto begin_character = buffer_begin();
-            if (begin_character == '\0')
+            if (pop_state)
             {
-                return std::nullopt;
+                states.pop();
+            }
+            return flush_buffer(TokenType::LITERAL);
+        }
+
+        std::optional<Token> process_substitution(char character)
+        {
+            // EXPRESSION SUBSTITUTION
+            if (character == '[')
+            {
+                auto *new_state = new state::Expression();
+                new_state->substitution = true;
+                states.push(new_state);
+                append_buffer(character);
+                return flush_buffer(TokenType::PUNCTUATION);
+            }
+            // COMMAND SUBSTITUTION
+            if (character == '(')
+            {
+                auto *new_state = new state::Command();
+                new_state->substitution = true;
+                states.push(new_state);
+                append_buffer(character);
+                return flush_buffer(TokenType::PUNCTUATION);
+            }
+            // VARIABLE SUBSTITUTION
+            if (character == '{')
+            {
+                auto *new_state = new state::Identifier(true);
+                states.push(new_state);
+                append_buffer(character);
+                return flush_buffer(TokenType::PUNCTUATION);
             }
 
-            states.pop();
-            return flush_buffer(TokenType::LITERAL);
+            buffer.clear();
+            auto *new_state = new state::Identifier(false);
+            states.push(new_state);
+            append_buffer(character);
+            return Token(TokenType::PUNCTUATION, "$");
         }
     };
 }
